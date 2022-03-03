@@ -5,7 +5,7 @@ setup(
     version='0.0.0',
     packages=['bidsio'],
     url='https://github.com/npnl/bidsio',
-    license='MIT',
+    license='Apache 2.0',
     author='Alexandre Hutton',
     install_requires=[
         'numpy',
