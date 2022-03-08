@@ -1,6 +1,7 @@
 import unittest
 import os
 import bids
+import numpy as np
 from bidsio.bidsloader import BIDSLoader
 
 
@@ -292,4 +293,20 @@ class TestBIDSLoader(unittest.TestCase):
         target = bdc.load_image_tuple(bdc.target_list[0])
         self.assertEqual(target.shape, (1, 1, 1, 1))
         self.assertEqual(target[0], 1)
+        return
+
+    def test_load_batch_data_only(self):
+        test_directory = os.path.dirname(__file__)
+        root_dir = os.path.join(test_directory, "bids_sample/train")
+        target_derivatives_names = ["test1"]
+        batch_idx = [0,1]
+
+        bdc = BIDSLoader(data_entities=[{'subject': '001',
+                                         'session': 'abc'}],
+                         target_entities=[],
+                         batch_size=2,
+                         root_dir=root_dir)
+        batch = bdc.load_batch(batch_idx, data_only=True)
+        self.assertTrue(type(batch) is np.ndarray)
+        self.assertEqual(batch.shape[0], len(batch_idx))
         return
