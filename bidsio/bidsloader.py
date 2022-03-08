@@ -114,25 +114,26 @@ class BIDSLoader:
         self.data_is_derivatives = [s is not None for s in self.data_derivatives_names]
 
         # Deal with target + derivatives
-        if target_derivatives_names is None:
-            self.target_derivatives_names = [None for _ in self.target_entities]  # change to list
-        else:
-            self.target_derivatives_names = target_derivatives_names
-        self.target_bids = []
-        for bids_root in self.root_target:
-            for name in self.target_derivatives_names:
-                if name is None:
-                    self.target_bids.append(bids.BIDSLayout(root=bids_root))
-                else:
-                    self.target_bids.append(bids.BIDSLayout(root=bids_root, derivatives=True).derivatives[name])
-        self.target_is_derivatives = [s is not None for s in self.target_derivatives_names]
+        if(self.num_target > 0):
+            if target_derivatives_names is None:
+                self.target_derivatives_names = [None for _ in self.target_entities]  # change to list
+            else:
+                self.target_derivatives_names = target_derivatives_names
+            self.target_bids = []
+            for bids_root in self.root_target:
+                for name in self.target_derivatives_names:
+                    if name is None:
+                        self.target_bids.append(bids.BIDSLayout(root=bids_root))
+                    else:
+                        self.target_bids.append(bids.BIDSLayout(root=bids_root, derivatives=True).derivatives[name])
+            self.target_is_derivatives = [s is not None for s in self.target_derivatives_names]
 
         self.unmatched_image_list = []
         self.unmatched_target_list = []
         self._loader_prep()
         if len(self.data_list) > 0:
             self.data_shape = self.data_list[0][0].get_image().shape
-        if len(self.target_list) > 0:
+        if len(target_entities) > 0:
             self.target_shape = self.target_list[0][0].get_image().shape
 
         self.label_names = label_names
@@ -410,13 +411,16 @@ class BIDSLoader:
                 data[idx, ...] = BIDSLoader.load_image_tuple(image_tuple, dtype=dtype)
         return data
 
-    def load_sample(self, idx: int):
+    def load_sample(self, idx: int,
+                    data_only: bool = False):
         """
         Loads the sample at idx.
         Parameters
         ----------
         idx : int
             Index of the sample to load. Max valid value is len(BIDSClassifier)-1
+        data_only : bool
+            Whether to load only the data.
 
         Returns
         -------
@@ -426,15 +430,20 @@ class BIDSLoader:
             Array of shape (num_target, *image.shape) containing the target.
         """
         data = np.zeros((len(self.data_entities), *self.data_shape), dtype=np.float32)
-        target = np.zeros(
-            (len(self.target_entities), *self.target_shape), dtype=np.float32
-        )
+        if(not data_only):
+            target = np.zeros((len(self.target_entities), *self.target_shape), dtype=np.float32)
 
         for point_idx, point in enumerate(self.data_list[idx]):
             data[point_idx, ...] = point.get_image().get_fdata()
-        for point_idx, point in enumerate(self.target_list[idx]):
-            target[point_idx, ...] = point.get_image().get_fdata()
-        return data, target
+
+        if(not data_only):
+            for point_idx, point in enumerate(self.target_list[idx]):
+                target[point_idx, ...] = point.get_image().get_fdata()
+
+        if(data_only):
+            return data
+        else:
+            return data, target
 
     def load_samples(self):
         '''
@@ -453,13 +462,17 @@ class BIDSLoader:
     def __len__(self):
         return len(self.data_list)
 
-    def load_batch(self, indices: list):
+    def load_batch(self, indices: list,
+                   data_only: bool = False):
         """
         Loads a batch of N images and returns the data/target in arrays.
         Parameters
         ----------
         indices : list [int]
             List of indices to load.
+        data_only : bool
+            Whether to load only the data.
+
         Returns
         -------
         np.array
@@ -467,23 +480,29 @@ class BIDSLoader:
         np.array
             Array of shape (len(indices), num_target, *image.shape) containing data.
         """
-        data = np.zeros(
-            (len(indices), len(self.data_entities), *self.data_shape), dtype=np.float32
-        )
-        target = np.zeros(
-            (len(indices), len(self.target_entities), *self.target_shape),
-            dtype=np.float32,
-        )
+        data = np.zeros((len(indices), len(self.data_entities), *self.data_shape), dtype=np.float32)
+        if(not data_only):
+            target = np.zeros((len(indices), len(self.target_entities), *self.target_shape), dtype=np.float32)
 
         for i, idx in enumerate(indices):
-            data[i, ...], target[i, ...] = self.load_sample(idx)
-        return data, target
+            if(data_only):
+                data[i, ...] = self.load_sample(idx, data_only=data_only)
+            else:
+                data[i, ...], target[i, ...] = self.load_sample(idx)
 
-    def load_batches(self):
+        if(data_only):
+            return data
+        else:
+            return data, target
+
+    def load_batches(self, data_only: bool = False):
         '''
         Generator that yields one batch at a time. Returns incomplete batch if dataset size is not evenly divisible by
         the number of batches.
-
+        Parameters
+        ----------
+        data_only: bool
+            Whether to load only the data.
         Returns
         -------
         np.array
