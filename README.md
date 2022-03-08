@@ -20,7 +20,7 @@ return a tuple of the form `(data, target)` with the following properties:
 - `subject` and `session` matches between the data and the target. This is indicated by the empty value in `data_entities`.
 - The data image has the `T1w` suffix (i.e., is a T1-weighted image).
 - The target image has the `FLAIR` suffix (i.e., is a T2-weighted FLAIR image).
-````buildoutcfg
+````python
 from bidsio.bidsloader import BIDSLoader
 bload = BIDSLoader(data_entities = [{'subject': '',
                                      'session': '',
@@ -34,7 +34,7 @@ bload = BIDSLoader(data_entities = [{'subject': '',
 We are not restricted to using a single BIDS dataset. If the images are split across different BIDS datasets, we can
 still pair them via the `root_list` argument. Instead of using a single BIDS root directory, `root_list` will be used
 to fetch images.
-````buildoutcfg
+````python
 from bidsio.bidsloader import BIDSLoader
 bload = BIDSLoader(data_entities = [{'subject': '',
                                      'session': '',
@@ -49,12 +49,12 @@ In cases where you have multiple inputs (e.g. T1w + T2w images) and have multipl
 lesion masks), we simply need to specify the BIDS entities. In the next example, the T1w and T2w images are in the
 same directory (raw data), and the target images are in the `derivatives/` directory.
 
-````buildoutcfg
+````python
 from bidsio.bidsloader import BIDSLoader
 bload = BIDSLoader(data_entities = [{'subject': '',
                                      'session': '',
                                      'suffix': 'T1w'},
-                                    {'suffix': 'T2w'}]
+                                    {'suffix': 'T2w'}],
                    target_entities = [{'label': 'WM'},
                                       {'label': 'L'}],
                    root_dir = 'example_bids/'
@@ -67,7 +67,7 @@ of `BIDSLoader`. Since your prediction will probably be a different type of data
 based on T1w images), you can modify the BIDS entities. Unmodified entities will be taken from the `image_to_imitate`
 input.
 
-````buildoutcfg
+````python
 from bidsio.bidsloader import BIDSLoader
 data = bids_image.get_fdata()
 prediction = model.predict(data)  # Prediction we generated and would like to save.

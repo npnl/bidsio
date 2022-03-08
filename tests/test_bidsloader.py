@@ -18,7 +18,7 @@ class TestBIDSLoader(unittest.TestCase):
     def test_BIDSLoader_init_empty_target(self):
         test_dir = os.path.dirname(__file__)
         root_dir = os.path.join(test_dir, "bids_sample/train")
-        data_ent = [{"subject": "123"}]
+        data_ent = [{"subject": "001"}]
         self.assertRaises(
             TypeError, BIDSLoader, root_dir=root_dir, data_entities=data_ent
         )
@@ -27,8 +27,8 @@ class TestBIDSLoader(unittest.TestCase):
     def test_BIDSLoader_init_correct(self):
         test_dir = os.path.dirname(__file__)
         root_dir = os.path.join(test_dir, "bids_sample/train")
-        data_ent = [{"subject": "123"}]
-        target_ent = [{"subject": "123"}]
+        data_ent = [{"subject": "001", 'session': '', 'suffix': 'T1w'}]
+        target_ent = [{"subject": "001", 'suffix': 'FLAIR'}]
         batch_size = 2
 
         bdc = BIDSLoader(
@@ -47,10 +47,10 @@ class TestBIDSLoader(unittest.TestCase):
         test_dir = os.path.dirname(__file__)
         root_dir = os.path.join(test_dir, "bids_sample/train")
         data_ent = [
-            {"subject": "123", "session": "5"},
-            {"subject": "456", "session": "5"},
+            {"subject": "001", "session": "abc", 'suffix':''},
+            {"subject": "002", "session": "ghi"},
         ]
-        target_ent = [{"subject": "123"}]
+        target_ent = [{"subject": "001", 'session': 'abc'}]
         batch_size = 2
 
         bdc = BIDSLoader(
@@ -67,10 +67,10 @@ class TestBIDSLoader(unittest.TestCase):
         test_dir = os.path.dirname(__file__)
         root_dir = os.path.join(test_dir, "bids_sample/train")
         data_ent = [
-            {"subject": "123", "session": "5"},
-            {"subject": "456", "session": "5"},
+            {"subject": "001", "session": "def", 'suffix': 'T1w'},
+            {"subject": "002", 'session': '', 'suffix': ''},
         ]
-        target_ent = [{"subject": "123"}, {"subject": "429"}]
+        target_ent = [{"subject": "001"}, {"subject": "002"}]
 
         bdc = BIDSLoader(
             root_dir=root_dir,
@@ -86,10 +86,10 @@ class TestBIDSLoader(unittest.TestCase):
         test_dir = os.path.dirname(__file__)
         root_dir = os.path.join(test_dir, "bids_sample/train")
         data_ent = [
-            {"subject": "123", "session": "5"},
-            {"subject": "456", "session": "5"},
+            {"subject": "001", "session": "def", 'suffix': 'T1w'},
+            {"subject": "002", 'session': '', 'suffix': ''},
         ]
-        target_ent = [{"subject": "123"}, {"subject": "429"}]
+        target_ent = [{"subject": "001"}, {"subject": "002"}]
 
         bdc = BIDSLoader(
             root_dir=root_dir,
@@ -105,10 +105,10 @@ class TestBIDSLoader(unittest.TestCase):
         test_dir = os.path.dirname(__file__)
         root_dir = os.path.join(test_dir, "bids_sample/train")
         data_ent = [
-            {"subject": "123", "session": "5"},
-            {"subject": "456", "session": "5"},
+            {"subject": "001", "session": "def", 'suffix': 'T1w'},
+            {"subject": "002", 'session': '', 'suffix': ''},
         ]
-        target_ent = [{"subject": "123"}, {"subject": "429"}]
+        target_ent = [{"subject": "001"}, {"subject": "002"}]
 
         bdc = BIDSLoader(
             root_dir=root_dir,
