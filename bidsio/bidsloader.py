@@ -521,7 +521,7 @@ class BIDSLoader:
                          new_entities: dict = None):
         '''
         Writes an image to a different BIDS directory using the path pattern of an existing image. Optionally
-        inserts new
+        inserts new entities and replaces existing values.
         Parameters
         ----------
         data_to_write : np.array
@@ -677,7 +677,6 @@ class BIDSLoader:
         list [BIDSImageFile]
             List of PyBIDS BIDSImageFile corresponding to the files containing the data.
         '''
-        num_images_per_sample = len(self.data_list[0])
         for i in range(0, len(self), self.batch_size):
             image_list = [self.data_list[j] for j in range(i, i+self.batch_size)]
             yield self.load_batch(range(i, i+self.batch_size), True), image_list
