@@ -511,7 +511,7 @@ class BIDSLoader:
             Array of shape (batch_size, num_target, *image.shape) containing data.
         '''
         for i in range(0, len(self), self.batch_size):
-            yield self.load_batch(range(i, i+self.batch_size))
+            yield self.load_batch(range(i, i+self.batch_size), data_only=data_only)
         return
 
     @staticmethod

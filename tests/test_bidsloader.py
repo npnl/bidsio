@@ -298,7 +298,6 @@ class TestBIDSLoader(unittest.TestCase):
     def test_load_batch_data_only(self):
         test_directory = os.path.dirname(__file__)
         root_dir = os.path.join(test_directory, "bids_sample/train")
-        target_derivatives_names = ["test1"]
         batch_idx = [0,1]
 
         bdc = BIDSLoader(data_entities=[{'subject': '001',
@@ -307,6 +306,22 @@ class TestBIDSLoader(unittest.TestCase):
                          batch_size=2,
                          root_dir=root_dir)
         batch = bdc.load_batch(batch_idx, data_only=True)
+        self.assertTrue(type(batch) is np.ndarray)
+        self.assertEqual(batch.shape[0], len(batch_idx))
+        return
+
+    def test_load_batches_data_only(self):
+        test_directory = os.path.dirname(__file__)
+        root_dir = os.path.join(test_directory, "bids_sample/train")
+        batch_idx = [0,1]
+
+        bdc = BIDSLoader(data_entities=[{'subject': '001',
+                                         'session': 'abc'}],
+                         target_entities=[],
+                         batch_size=2,
+                         root_dir=root_dir)
+        for batch in bdc.load_batches(data_only=True):
+            break
         self.assertTrue(type(batch) is np.ndarray)
         self.assertEqual(batch.shape[0], len(batch_idx))
         return
