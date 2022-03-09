@@ -666,3 +666,16 @@ class BIDSLoader:
             file_ent_split.insert(split_idx+1, ent_insert_string)
             new_file_pattern = bids_entity_sep.join(file_ent_split)
         return join(dir_pattern, new_file_pattern)
+
+    def load_batch_for_prediction(self):
+        '''
+        Generator that returns the image data along
+        Returns
+        -------
+
+        '''
+        num_images_per_sample = len(self.data_list[0])
+        for i in range(0, len(self), self.batch_size):
+            image_list = [self.data_list[j] for j in range(i, i+self.batch_size)]
+            yield self.load_batch(range(i, i+self.batch_size), True), image_list
+        return
