@@ -448,8 +448,8 @@ class BIDSLoader:
     def load_samples(self):
         '''
         Generator that yields one sample at a time.
-        Returns
-        -------
+        Yields
+        ------
         np.array
             Array of shape (num_data, *image.shape) containing the data.
         np.array
@@ -503,8 +503,8 @@ class BIDSLoader:
         ----------
         data_only: bool
             Whether to load only the data.
-        Returns
-        -------
+        Yields
+        ------
         np.array
             Array of shape (batch_size, num_data, *image.shape) containing data.
         np.array
@@ -535,7 +535,7 @@ class BIDSLoader:
 
         Returns
         -------
-
+        None
         '''
         if(new_entities is None):
             new_entities = {}
@@ -669,10 +669,13 @@ class BIDSLoader:
 
     def load_batch_for_prediction(self):
         '''
-        Generator that returns the image data along
-        Returns
-        -------
-
+        Generator that returns the image data along with BIDS image file.
+        Yields
+        ------
+        np.array
+            Array of shape (batch_size, num_data, *image.shape) containing data.
+        list [BIDSImageFile]
+            List of PyBIDS BIDSImageFile corresponding to the files containing the data.
         '''
         num_images_per_sample = len(self.data_list[0])
         for i in range(0, len(self), self.batch_size):
