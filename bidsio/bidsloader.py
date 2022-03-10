@@ -738,6 +738,7 @@ class BIDSLoader:
             List of PyBIDS BIDSImageFile corresponding to the files containing the data.
         '''
         for i in range(0, len(self), self.batch_size):
-            image_list = [self.data_list[j] for j in range(i, i+self.batch_size)]
-            yield self.load_batch(range(i, i+self.batch_size), True), image_list
+            max_range = np.min([i+self.batch_size, len(self.data_list)])
+            image_list = [self.data_list[j] for j in range(i, max_range)]
+            yield self.load_batch(range(i, max_range), True), image_list
         return
