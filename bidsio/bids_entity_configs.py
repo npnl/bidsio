@@ -28,7 +28,8 @@ entity_short_name = OrderedDict([
     ('resolution', 'res'),
     ('den', 'den'),
     ('label', 'label'),
-    ('desc', 'desc')
+    ('desc', 'desc'),
+    ('suffix', 'suffix')
 ])
 
 entity_long_name = OrderedDict()
