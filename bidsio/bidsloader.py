@@ -9,7 +9,7 @@ import pathlib
 from bids import BIDSLayout
 from bids.layout.models import BIDSImageFile
 from .bids_entity_configs import entity_long_name, entity_short_name
-import copy
+import json
 bids_entity_sep = '_'  # Separator between entity-value pairs (e.g. '_' in sub-X_ses-Y)
 bids_value_sep = '-'  # Separator between entity and value (e.g. '-' in sub-X)
 
@@ -561,6 +561,52 @@ class BIDSLoader:
         return
 
     @staticmethod
+    def write_dataset_description(bids_root: str,
+                                  dataset_name: str,
+                                  author_names: list = None,
+                                  derivative_name: str = None,
+                                  derivative_version: str = '1.0'):
+        '''
+        Writes the dataset_description.json file to the BIDS root.
+        Parameters
+        ----------
+        bids_root : str
+            Path to the BIDS data root directory.
+        dataset_name : str
+            Name to enter for the various "Name" fields in `dataset_description.json`
+        author_names : list
+            Optional. List of authors.
+        derivative_name : str
+            Optional. If not None, write to the `derivatives/derivative_name/` directory instead of the root directory.
+        derivative_version : str
+            Optional. Version of the pipeline used to generate.
+        Returns
+        -------
+        None
+        '''
+        desc = {'Name': dataset_name}
+        desc['BIDSVersion'] = '1.6.0'
+
+        if(author_names is None):
+            desc['Authors'] = ['']
+        else:
+            desc['Authors'] = author_names
+
+        desc['PipelineDescription'] = {'Name': dataset_name}
+        desc['GeneratedBy'] = [{'Name': dataset_name}]
+        desc['GeneratedBy'][0]['Version'] = derivative_version
+
+        if(derivative_name is None):
+            output_path = join(bids_root, 'dataset_description.json')
+        else:
+            output_path = join(bids_root, 'derivatives', derivative_name, 'dataset_description.json')
+        f = open(output_path, 'w')
+        json.dump(desc, f, separators=(",\n", ":\t"))
+        f.close()
+        return
+
+
+    @staticmethod
     def extract_path_pattern(image: BIDSImageFile):
         '''
         Determines the path pattern from the input image. Useful for creating new files using the same pattern without
@@ -643,19 +689,33 @@ class BIDSLoader:
         if(entity in entity_long_name.values()):
             entity_long = entity
             entity_short = entity_short_name[entity]
-        ent_insert_string = f'{entity_short}{bids_value_sep}{{{entity_long}}}'
+        if(entity != 'suffix'):
+            ent_insert_string = f'{entity_short}{bids_value_sep}{{{entity_long}}}'
         # Possible future ambiguous case
         if(entity in entity_short_name.keys() and entity in entity_long_name.keys() and entity_short_name[entity] != entity):
             raise ValueError(f'Ambiguous entity definition for entity {entity}.')
 
         entity_long_list = list(entity_long_name.keys())
-        entity_idx = entity_long_list.index(entity_short)
+        entity_idx = entity_long_list.index(entity_short)  # index in the ordered list of entities
 
         file_ent_split = file_pattern.split(bids_entity_sep)
+        # If entity is suffix, we can skip immediately to the end
+        if(entity == 'suffix'):
+            # Check if {suffix} is at the end, before extension
+            if('{suffix}' in file_ent_split[-1]):
+                return path_pattern
+            else:
+                # Remove extension; add {suffix}; append extension
+                ent_insert_string = '{suffix}{extension}'
+                file_ent_split[-1] = file_ent_split[-1].replace('{extension}', ent_insert_string)
+                new_file_pattern = bids_entity_sep.join(file_ent_split)
+                return join(dir_pattern, new_file_pattern)
+
+
         for split_idx, ent_value in enumerate(file_ent_split[:-1]):  # ignore suffix / extension
             ent, val = ent_value.split(bids_value_sep)
             ent_idx = entity_long_list.index(ent)
-            if(ent_idx == entity_idx):
+            if(ent_idx == entity_idx):  # ent_idx == entity_idx iff entity is already in patter
                 return path_pattern  # entity is already in path_pattern
             elif(ent_idx > entity_idx):
                 file_ent_split.insert(split_idx, ent_insert_string)
