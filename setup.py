@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='bidsio',
-    version='0.0.6',
+    version='0.0.7',
     packages=['bidsio'],
     url='https://github.com/npnl/bidsio',
     license='Apache 2.0',

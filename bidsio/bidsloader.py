@@ -108,9 +108,15 @@ class BIDSLoader:
                 if name is None:
                     self.data_bids.append(bids.BIDSLayout(root=bids_root))
                 else:
-                    self.data_bids.append(
-                        bids.BIDSLayout(root=bids_root, derivatives=True).derivatives[name]
-                    )
+                    # Might be either in root (derivatives=bids_root) or in (bids_root/derivatives)
+                    # Check if derivatives dir exists
+                    if(not os.path.exists(join(bids_root, 'derivatives'))):
+                        # Doesn't exist; expect it to be in root
+                        self.data_bids.append(bids.BIDSLayout(root=bids_root, derivatives=bids_root).derivatives[name])
+                    else:
+                        self.data_bids.append(bids.BIDSLayout(root=bids_root, derivatives=True).derivatives[name])
+
+
         self.data_is_derivatives = [s is not None for s in self.data_derivatives_names]
 
         # Deal with target + derivatives
@@ -125,7 +131,11 @@ class BIDSLoader:
                     if name is None:
                         self.target_bids.append(bids.BIDSLayout(root=bids_root))
                     else:
-                        self.target_bids.append(bids.BIDSLayout(root=bids_root, derivatives=True).derivatives[name])
+                        if(not os.path.exists(join(bids_root, 'derivatives'))):
+                            self.target_bids.append(bids.BIDSLayout(root=bids_root,
+                                                                    derivatives=bids_root).derivatives[name])
+                        else:
+                            self.target_bids.append(bids.BIDSLayout(root=bids_root, derivatives=True).derivatives[name])
             self.target_is_derivatives = [s is not None for s in self.target_derivatives_names]
 
         self.unmatched_image_list = []
