@@ -179,9 +179,10 @@ class BIDSLoader:
         # Create file list
         self.data_list = []
         self.target_list = []
-        bids_set = bids.BIDSLayout(
-            root=self.root_data[0], derivatives=self.data_is_derivatives[0]
-        )
+        if(os.path.exists(join(self.root_data[0], 'derivatives'))):
+            bids_set = bids.BIDSLayout(root=self.root_data[0], derivatives=self.data_is_derivatives[0])
+        else:
+            bids_set = bids.BIDSLayout(root=self.root_data[0], derivatives=self.root_data[0])
         if self.data_is_derivatives[0]:
             bids_set = bids_set.derivatives[self.data_derivatives_names[0]]
 
@@ -521,7 +522,8 @@ class BIDSLoader:
             Array of shape (batch_size, num_target, *image.shape) containing data.
         '''
         for i in range(0, len(self), self.batch_size):
-            yield self.load_batch(range(i, i+self.batch_size), data_only=data_only)
+            max_batch_idx = np.min([i+self.batch_size, len(self)])
+            yield self.load_batch(range(i, max_batch_idx), data_only=data_only)
         return
 
     @staticmethod
