@@ -506,22 +506,31 @@ class BIDSLoader:
         else:
             return data, target
 
-    def load_batches(self, data_only: bool = False):
+    def load_batches(self,
+                     start_idx: int = 0,
+                     end_idx: int = None,
+                     data_only: bool = False):
         '''
-        Generator that yields one batch at a time. Returns incomplete batch if dataset size is not evenly divisible by
-        the number of batches.
+        Generator that yields one batch at a time. Returns samples within the specified range of indices. Returns
+        incomplete batch if dataset size is not evenly divisible by the number of batches.
         Parameters
         ----------
-        data_only: bool
+        start_idx : int
+            Index of data/target list at which to start.
+        end_idx : int
+            Index of data/target list at which to end. If None, go to the end of the list.
+        data_only
             Whether to load only the data.
         Yields
         ------
         np.array
             Array of shape (batch_size, num_data, *image.shape) containing data.
         np.array
-            Array of shape (batch_size, num_target, *image.shape) containing data.
+            Array of shape (batch_size, num_target, *image.shape) containing targets.
         '''
-        for i in range(0, len(self), self.batch_size):
+        if(end_idx is None):
+            end_idx = len(self)
+        for i in range(start_idx, end_idx, self.batch_size):
             max_batch_idx = np.min([i+self.batch_size, len(self)])
             yield self.load_batch(range(i, max_batch_idx), data_only=data_only)
         return
