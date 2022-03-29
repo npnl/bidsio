@@ -456,19 +456,6 @@ class BIDSLoader:
         else:
             return data, target
 
-    def load_samples(self):
-        '''
-        Generator that yields one sample at a time.
-        Yields
-        ------
-        np.array
-            Array of shape (num_data, *image.shape) containing the data.
-        np.array
-            Array of shape (num_target, *image.shape) containing the target.
-        '''
-        for i in range(len(self)):
-            yield self.load_sample(i)
-        return
 
     def __len__(self):
         return len(self.data_list)
@@ -506,34 +493,6 @@ class BIDSLoader:
         else:
             return data, target
 
-    def load_batches(self,
-                     start_idx: int = 0,
-                     end_idx: int = None,
-                     data_only: bool = False):
-        '''
-        Generator that yields one batch at a time. Returns samples within the specified range of indices. Returns
-        incomplete batch if dataset size is not evenly divisible by the number of batches.
-        Parameters
-        ----------
-        start_idx : int
-            Index of data/target list at which to start.
-        end_idx : int
-            Index of data/target list at which to end. If None, go to the end of the list.
-        data_only
-            Whether to load only the data.
-        Yields
-        ------
-        np.array
-            Array of shape (batch_size, num_data, *image.shape) containing data.
-        np.array
-            Array of shape (batch_size, num_target, *image.shape) containing targets.
-        '''
-        if(end_idx is None):
-            end_idx = len(self)
-        for i in range(start_idx, end_idx, self.batch_size):
-            max_batch_idx = np.min([i+self.batch_size, len(self)])
-            yield self.load_batch(range(i, max_batch_idx), data_only=data_only)
-        return
 
     @staticmethod
     def write_image_like(data_to_write: np.array,
