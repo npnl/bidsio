@@ -42,7 +42,7 @@ class BIDSGenerator:
 
         batch_size = self.loader.batch_size
         for i in range(start_idx, end_idx, batch_size):
-            max_batch_idx = np.min([i+batch_size])
+            max_batch_idx = np.min([i+batch_size, len(self.loader)])
             yield self.loader.load_batch(range(i, max_batch_idx), data_only=data_only)
         return
 
