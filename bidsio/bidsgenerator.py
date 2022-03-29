@@ -1,4 +1,4 @@
-from bidsloader import BIDSLoader
+from .bidsloader import BIDSLoader
 import numpy as np
 
 
