@@ -706,19 +706,3 @@ class BIDSLoader:
             file_ent_split.insert(split_idx+1, ent_insert_string)
             new_file_pattern = bids_entity_sep.join(file_ent_split)
         return join(dir_pattern, new_file_pattern)
-
-    def load_batch_for_prediction(self):
-        '''
-        Generator that returns the image data along with BIDS image file.
-        Yields
-        ------
-        np.array
-            Array of shape (batch_size, num_data, *image.shape) containing data.
-        list [BIDSImageFile]
-            List of PyBIDS BIDSImageFile corresponding to the files containing the data.
-        '''
-        for i in range(0, len(self), self.batch_size):
-            max_range = np.min([i+self.batch_size, len(self.data_list)])
-            image_list = [self.data_list[j] for j in range(i, max_range)]
-            yield self.load_batch(range(i, max_range), True), image_list
-        return
