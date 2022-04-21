@@ -98,22 +98,22 @@ class BIDSLoader:
 
         self.batch_size = batch_size
 
-        # Deal with data + derivatives
+        # Deal with data
         if data_derivatives_names is None:
             self.data_derivatives_names = [None for _ in self.data_entities]
         else:
             self.data_derivatives_names = data_derivatives_names
-
-        # Get derivative set if derivatives; get raw if not
+        # Get the list of data BIDS sets
         self.data_bids = self._get_bids_list(root_list=self.data_root,
                                              derivatives_names=self.data_derivatives_names)
         self.data_is_derivatives = [s is not None for s in self.data_derivatives_names]
 
+        # Deal with target
         if(target_derivatives_names is None):
             self.target_derivatives_names = [None for _ in self.target_entities]
         else:
             self.target_derivatives_names = target_derivatives_names
-
+        # Get list of target BIDS sets
         self.target_bids = self._get_bids_list(root_list=self.target_root,
                                                derivatives_names=self.target_derivatives_names)
         self.target_is_derivatives = [s is not None for s in self.target_derivatives_names]
@@ -121,9 +121,11 @@ class BIDSLoader:
         self.unmatched_image_list = []
         self.unmatched_target_list = []
         self._loader_prep()
-        if len(self.data_list) > 0:
+        self.data_shape = None
+        self.target_shape = None
+        if len(self.data_list) and isinstance(self.data_list[0][0], bids.layout.BIDSImageFile)> 0:
             self.data_shape = self.data_list[0][0].get_image().shape
-        if len(target_entities) > 0:
+        if len(target_entities) > 0 and isinstance(self.target_list[0][0], bids.layout.BIDSImageFile):
             self.target_shape = self.target_list[0][0].get_image().shape
 
         self.label_names = label_names
@@ -486,6 +488,7 @@ class BIDSLoader:
         np.array
             Array of shape (len(indices), num_target, *image.shape) containing data.
         """
+
         data = np.zeros((len(indices), len(self.data_entities), *self.data_shape), dtype=np.float32)
         if(not data_only):
             target = np.zeros((len(indices), len(self.target_entities), *self.target_shape), dtype=np.float32)
