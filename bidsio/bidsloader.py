@@ -40,6 +40,10 @@ class BIDSLoader:
     target_derivatives_names : list [str]
         Optional. If an entry in target_entities is BIDS derivatives data, its name should be listed here. Entries
         that don't correspond to derivatives should be listed as None. Default: [None for _ in target_entities]
+    data_root : list
+        List of BIDS root directories containing data if it must be loaded from different BIDS directories.
+    target_root : list
+        List of BIDS root directories containing targets if they must be loaded from different BIDS directories.
     root_list : list
         List of BIDS root directories, if data must be loaded from different BIDS
         directories. There must be exactly len(data_entities) + len(target_entities) entries in the list, with the
@@ -56,8 +60,9 @@ class BIDSLoader:
             batch_size: int = 1,
             data_derivatives_names: list = None,
             target_derivatives_names: list = None,
-            root_list: list = None,
-            label_names: list = None,
+            data_root: list = None,
+            target_root: list = None,
+            label_names: list = None
     ):
 
         if isinstance(data_entities, list):
@@ -79,76 +84,68 @@ class BIDSLoader:
         self.num_data = len(self.data_entities)
         self.num_target = len(self.target_entities)
 
-        if(root_dir is None and root_list is None):
+        if(root_dir is None and data_root is None and target_root is None):
             raise(ValueError('Either root_dir or root_list must be defined.'))
         elif(root_dir is None):
-            assert len(root_list) == self.num_data + self.num_target, \
-                "Root list should match the number of data + targets"
-            self.root_data = root_list[:self.num_data]
-            self.root_target = root_list[self.num_data:]
-        elif(root_list is None):
+            self.data_root = data_root
+            self.target_root = target_root
+        elif(data_root is None and target_root is None):
             # Need to make list of length num_data + num_target
-            self.root_data = [root_dir for _ in range(self.num_data)]
-            self.root_target= [root_dir for _ in range(self.num_target)]
+            self.data_root = [root_dir for _ in range(self.num_data)]
+            self.target_root = [root_dir for _ in range(self.num_target)]
         else:
             raise(ValueError('Both root_dir and root_list are defined; only one of these should be used.'))
 
         self.batch_size = batch_size
 
-        # Deal with data + derivatives
+        # Deal with data
         if data_derivatives_names is None:
             self.data_derivatives_names = [None for _ in self.data_entities]
         else:
             self.data_derivatives_names = data_derivatives_names
-
-        # Get derivative set if derivatives; get raw if not
-        self.data_bids = []
-        for bids_root in self.root_data:
-            for name in self.data_derivatives_names:
-                if name is None:
-                    self.data_bids.append(bids.BIDSLayout(root=bids_root))
-                else:
-                    # Might be either in root (derivatives=bids_root) or in (bids_root/derivatives)
-                    # Check if derivatives dir exists
-                    if(not os.path.exists(join(bids_root, 'derivatives'))):
-                        # Doesn't exist; expect it to be in root
-                        self.data_bids.append(bids.BIDSLayout(root=bids_root, derivatives=bids_root).derivatives[name])
-                    else:
-                        self.data_bids.append(bids.BIDSLayout(root=bids_root, derivatives=True).derivatives[name])
-
-
+        # Get the list of data BIDS sets
+        self.data_bids = self._get_bids_list(root_list=self.data_root,
+                                             derivatives_names=self.data_derivatives_names)
         self.data_is_derivatives = [s is not None for s in self.data_derivatives_names]
 
-        # Deal with target + derivatives
-        if(self.num_target > 0):
-            if target_derivatives_names is None:
-                self.target_derivatives_names = [None for _ in self.target_entities]  # change to list
-            else:
-                self.target_derivatives_names = target_derivatives_names
-            self.target_bids = []
-            for bids_root in self.root_target:
-                for name in self.target_derivatives_names:
-                    if name is None:
-                        self.target_bids.append(bids.BIDSLayout(root=bids_root))
-                    else:
-                        if(not os.path.exists(join(bids_root, 'derivatives'))):
-                            self.target_bids.append(bids.BIDSLayout(root=bids_root,
-                                                                    derivatives=bids_root).derivatives[name])
-                        else:
-                            self.target_bids.append(bids.BIDSLayout(root=bids_root, derivatives=True).derivatives[name])
-            self.target_is_derivatives = [s is not None for s in self.target_derivatives_names]
+        # Deal with target
+        if(target_derivatives_names is None):
+            self.target_derivatives_names = [None for _ in self.target_entities]
+        else:
+            self.target_derivatives_names = target_derivatives_names
+        # Get list of target BIDS sets
+        self.target_bids = self._get_bids_list(root_list=self.target_root,
+                                               derivatives_names=self.target_derivatives_names)
+        self.target_is_derivatives = [s is not None for s in self.target_derivatives_names]
 
         self.unmatched_image_list = []
         self.unmatched_target_list = []
         self._loader_prep()
-        if len(self.data_list) > 0:
+        self.data_shape = None
+        self.target_shape = None
+        if len(self.data_list) and isinstance(self.data_list[0][0], bids.layout.BIDSImageFile)> 0:
             self.data_shape = self.data_list[0][0].get_image().shape
-        if len(target_entities) > 0:
+        if len(target_entities) > 0 and isinstance(self.target_list[0][0], bids.layout.BIDSImageFile):
             self.target_shape = self.target_list[0][0].get_image().shape
 
         self.label_names = label_names
         self._prediction_label_names = self.label_names  # RAMP convention
         return
+
+    @staticmethod
+    def _get_bids_list(root_list: list, derivatives_names: list) -> list:
+        bids_list = []
+        for bids_root in root_list:
+            for name in derivatives_names:
+                if name is None:
+                    bids_list.append(bids.BIDSLayout(root=bids_root))
+                else:
+                    if (not os.path.exists(join(bids_root, 'derivatives'))):
+                        # Doesn't exist; expect it to be in root
+                        bids_list.append(bids.BIDSLayout(root=bids_root, derivatives=bids_root).derivatives[name])
+                    else:
+                        bids_list.append(bids.BIDSLayout(root=bids_root, derivatives=True).derivatives[name])
+        return bids_list
 
     def _loader_prep(self):
         """
@@ -179,10 +176,10 @@ class BIDSLoader:
         # Create file list
         self.data_list = []
         self.target_list = []
-        if(os.path.exists(join(self.root_data[0], 'derivatives'))):
-            bids_set = bids.BIDSLayout(root=self.root_data[0], derivatives=self.data_is_derivatives[0])
+        if(os.path.exists(join(self.data_root[0], 'derivatives'))):
+            bids_set = bids.BIDSLayout(root=self.data_root[0], derivatives=self.data_is_derivatives[0])
         else:
-            bids_set = bids.BIDSLayout(root=self.root_data[0], derivatives=self.root_data[0])
+            bids_set = bids.BIDSLayout(root=self.data_root[0], derivatives=self.data_root[0])
         if self.data_is_derivatives[0]:
             bids_set = bids_set.derivatives[self.data_derivatives_names[0]]
 
@@ -491,6 +488,7 @@ class BIDSLoader:
         np.array
             Array of shape (len(indices), num_target, *image.shape) containing data.
         """
+
         data = np.zeros((len(indices), len(self.data_entities), *self.data_shape), dtype=np.float32)
         if(not data_only):
             target = np.zeros((len(indices), len(self.target_entities), *self.target_shape), dtype=np.float32)

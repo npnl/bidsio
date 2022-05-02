@@ -38,7 +38,7 @@ class TestBIDSLoader(unittest.TestCase):
             target_entities=target_ent,
             batch_size=batch_size,
         )
-        self.assertEqual(bdc.root_data[0], root_dir)
+        self.assertEqual(bdc.data_root[0], root_dir)
         self.assertEqual(bdc.data_entities, data_ent)
         self.assertEqual(bdc.target_entities, target_ent)
         self.assertEqual(bdc.batch_size, batch_size)
@@ -129,7 +129,8 @@ class TestBIDSLoader(unittest.TestCase):
         data_ent = {"suffix": "T1w", "subject": "", "session": ""}
         target_ent = {"suffix": "FLAIR"}
 
-        bdc = BIDSLoader(root_list=[root_data, root_target],
+        bdc = BIDSLoader(data_root=[root_data],
+                         target_root=[root_target],
                          data_entities=data_ent,
                          target_entities=target_ent)
         match_ents = ['subject','session']
